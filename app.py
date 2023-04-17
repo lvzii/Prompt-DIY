@@ -9,7 +9,13 @@ import pandas as pd
 
 DB_NAME = "instruct"
 TABLE_NAME = "instruct"
+title = "Prompt-DIY"
 
+candidate_prompts = [
+    "润色下面这段文本",
+    "其他",
+    ""
+]
 # 连接SQLite数据库
 engine = create_engine(f'sqlite:///{DB_NAME}.db?check_same_thread=False', echo=True)
 
@@ -30,6 +36,8 @@ def write_to_db(prompt: str, input: str, output: str):
 
 # 定义Gradio界面
 iface = gr.Interface(
+    title=title,
+    examples=[[i, "", ""] for i in candidate_prompts],
     fn=write_to_db,
     inputs=[
         gr.inputs.Textbox(label="prompt"),
