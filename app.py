@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Author  : youshu.Ji
 import uuid
+from datetime import datetime
 
 import gradio as gr
 from sqlalchemy import create_engine
@@ -13,6 +14,9 @@ title = "Prompt-DIY"
 
 candidate_prompts = [
     "润色下面这段文本",
+    "根据以下介绍，写一个小说开头",
+    "根据以下介绍，写一个小说大纲",
+    "根据以下大纲，扩写该章节",
     "其他",
     ""
 ]
@@ -24,6 +28,7 @@ engine = create_engine(f'sqlite:///{DB_NAME}.db?check_same_thread=False', echo=T
 def write_to_db(prompt: str, input: str, output: str):
     df = pd.DataFrame(
         {
+            "insert_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "prompt": prompt,
             "input": input,
             "output": output
@@ -35,10 +40,20 @@ def write_to_db(prompt: str, input: str, output: str):
 
 
 # 依据prompt和input的输入，调用接口生成output
-def write_to_output(prompt: str, input: str):
-    # 接口需要自己设定
-    from generate_api import chatgpt
-    return chatgpt(prompt + input)
+def write_to_output(prompt: str, input: str, method):
+    print(prompt, input, method)
+    try:
+        if method == "chatgpt":
+            # 接口需要自己设定
+            from generate_api import chatgpt
+            return chatgpt(prompt + "\n" + input)
+        elif method == "chatglm":
+            from generate_api import chatglm
+            return chatglm(prompt + "\n" + input)
+        else:
+            return ""
+    except:
+        return ""
 
 
 def func_clear(prompt, input, output, flag):
@@ -52,16 +67,24 @@ with gr.Blocks() as iface:
     gr.Markdown("Build yourself prompt")
     with gr.Tab("Build"):
         text_prompt = gr.inputs.Textbox(label="prompt")
+        examples = gr.Examples(examples=candidate_prompts,
+                               inputs=[text_prompt])
+
         text_input = gr.inputs.Textbox(label="input")
-        text_output = gr.inputs.Textbox(label="output")
-        text_flag = gr.outputs.Textbox(label="写入情况")
+        x = gr.Radio(["chatglm", "chatgpt", "none"])
         btn_generate = gr.Button("生成")
+        text_reference = gr.inputs.Textbox(label="reference")
+        btn_generate.click(write_to_output, inputs=[text_prompt, text_input, x], outputs=text_reference)
+        btn_transfer = gr.Button("⬇")
+        text_output = gr.inputs.Textbox(label="output")
         btn_submit = gr.Button("提交")
+        text_flag = gr.outputs.Textbox(label="写入情况")
         btn_clear = gr.Button("清空")
-        btn_generate.click(write_to_output, inputs=[text_prompt, text_input], outputs=text_output)
+        btn_transfer.click(lambda x: x, inputs=[text_reference], outputs=[text_output])
         btn_submit.click(write_to_db, inputs=[text_prompt, text_input, text_output], outputs=text_flag)
         btn_clear.click(func_clear, inputs=[text_prompt, text_input, text_output, text_flag],
                         outputs=[text_prompt, text_input, text_output, text_flag])
+        text_clipboard = gr.Textbox(label="clipboard")
 
 # 启动Gradio界面
 iface.launch()
