@@ -14,9 +14,14 @@ title = "Prompt-DIY"
 
 candidate_prompts = [
     "润色下面这段文本",
+    "对指定内容进行多个版本的改写，以避免文本重复。",
+    "改写这篇文章",
     "根据以下介绍，写一个小说开头",
     "根据以下介绍，写一个小说大纲",
     "根据以下大纲，扩写该章节",
+    "给这个故事添加一个反转的剧情",
+    "给这个故事改成一个有反转的剧情",
+    "写一个小说开头"
     "其他",
     ""
 ]
@@ -56,8 +61,8 @@ def write_to_output(prompt: str, input: str, method):
         return ""
 
 
-def func_clear(prompt, input, output, flag):
-    return "", "", "", ""
+def func_clear(prompt, input, reference, output, flag):
+    return "", "", "", "", ""
 
 
 # examples = [[i, "", ""] for i in candidate_prompts],
@@ -82,7 +87,7 @@ with gr.Blocks() as iface:
         btn_clear = gr.Button("清空")
         btn_transfer.click(lambda x: x, inputs=[text_reference], outputs=[text_output])
         btn_submit.click(write_to_db, inputs=[text_prompt, text_input, text_output], outputs=text_flag)
-        btn_clear.click(func_clear, inputs=[text_prompt, text_input, text_output, text_flag],
+        btn_clear.click(func_clear, inputs=[text_prompt, text_input, text_reference, text_output, text_flag],
                         outputs=[text_prompt, text_input, text_output, text_flag])
         text_clipboard = gr.Textbox(label="clipboard")
 
